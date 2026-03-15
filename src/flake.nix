@@ -1,28 +1,70 @@
 {
-  description = "A very basic flake";
+  description = "Alcatraz OS - NixOS configurations for bare-metal and WSL2";
 
+  # Community convention: pin all third-party inputs to follow the same
+  # nixpkgs to avoid multiple evaluations and ensure consistency.
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    nixos-wsl.url = "github:nix-community/NixOS-WSL";
+    nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  
-   outputs = { self, nixpkgs, home-manager, ... }@inputs: {
-      nixosConfigurations.alcatraz = nixpkgs.lib.nixosSystem {
-       system = "x86_64-linux"; 
-       specialArgs = { inherit inputs; };
-       modules = [
-         ./alcatraz/configuration.nix
-         home-manager.nixosModules.home-manager
-         {
-           home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.dev = import ./home/home-dev.nix;
-            home-manager.users.al = import ./home/home-al.nix;
-          }
+  outputs = { self, nixpkgs, home-manager, nixos-wsl, ... }@inputs:
+  let
+    system = "x86_64-linux";
+
+    # Shared Home Manager configuration used by both hosts.
+    # Community convention: define home-manager as a NixOS module so that
+    # user environments are managed declaratively alongside the system.
+    homeManagerModule = {
+      home-manager.useGlobalPkgs = true;
+      home-manager.useUserPackages = true;
+      home-manager.users.dev = import ./home/home-dev.nix;
+      home-manager.users.al = import ./home/home-al.nix;
+    };
+  in
+  {
+    # Community convention: each machine is a named entry under
+    # nixosConfigurations. Build/switch with:
+    #   sudo nixos-rebuild switch --flake .#<hostname>
+
+    # Bare-metal graphical install
+    nixosConfigurations.alcatraz = nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs nixos-wsl; };
+      modules = [
+        ./hosts/alcatraz/configuration.nix
+        home-manager.nixosModules.home-manager
+        homeManagerModule
       ];
     };
-  };  
 
+    # WSL2 build
+    nixosConfigurations.alcatraz-wsl = nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs nixos-wsl; };
+      modules = [
+        ./hosts/alcatraz-wsl/configuration.nix
+        home-manager.nixosModules.home-manager
+        homeManagerModule
+      ];
+    };
+
+    # WSL tarball builder.
+    # The nixos-wsl module exposes a tarballBuilder script that produces a
+    # .wsl file (tar.gz) importable by WSL on Windows.
+    #
+    # Build with:
+    #   sudo nix run ./src#alcatraz-wsl-tarball
+    #
+    # Then on Windows:
+    #   wsl --install --from-file nixos.wsl        (WSL >= 2.4.4)
+    #   wsl --import NixOS <path> nixos.wsl        (older WSL)
+    packages.${system}.alcatraz-wsl-tarball =
+      self.nixosConfigurations.alcatraz-wsl.config.system.build.tarballBuilder;
+  };
 }

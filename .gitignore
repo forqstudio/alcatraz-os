@@ -7,3 +7,6 @@ result-*
 
 # Ignore opencode plans
 .opencode/plans
+
+# Ignore WSL2 output
+nixos.wsl
