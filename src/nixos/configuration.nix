@@ -88,6 +88,8 @@
        vim
        mc
        htop
+       vscodium
+       opencode
     ];
   };
 
