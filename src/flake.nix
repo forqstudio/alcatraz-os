@@ -43,6 +43,17 @@
       ];
     };
 
+    # Installer ISO
+    nixosConfigurations.alcatraz-iso = nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs self; };
+      modules = [
+        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+        "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+        ./hosts/alcatraz-iso/configuration.nix
+      ];
+    };
+
     # WSL2 build
     nixosConfigurations.alcatraz-wsl = nixpkgs.lib.nixosSystem {
       inherit system;
@@ -64,7 +75,14 @@
     # Then on Windows:
     #   wsl --install --from-file nixos.wsl        (WSL >= 2.4.4)
     #   wsl --import NixOS <path> nixos.wsl        (older WSL)
-    packages.${system}.alcatraz-wsl-tarball =
-      self.nixosConfigurations.alcatraz-wsl.config.system.build.tarballBuilder;
+    packages.${system} = {
+      alcatraz-wsl-tarball =
+        self.nixosConfigurations.alcatraz-wsl.config.system.build.tarballBuilder;
+
+      # Build with: nix build ./src#iso
+      # Result at: result/iso/nixos-*.iso
+      iso =
+        self.nixosConfigurations.alcatraz-iso.config.system.build.isoImage;
+    };
   };
 }
