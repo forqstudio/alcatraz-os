@@ -46,13 +46,22 @@ Requires a UEFI-capable x86_64 machine and internet access during install.
    ```
    git clone https://github.com/forqstudio/alcatraz-os.git
    ```
-2. Generate hardware config for your machine:
+2. Add your hardware config — either copy your existing one or generate a new one:
+   ```
+   cp /etc/nixos/hardware-configuration.nix \
+     ./alcatraz-os/src/hosts/alcatraz/hardware-configuration.nix
+   ```
+   or:
    ```
    sudo nixos-generate-config --dir ./alcatraz-os/src/hosts/alcatraz/
    ```
 3. Edit `src/hosts/alcatraz/configuration.nix` to match your bootloader and
    locale settings.
-4. Apply the configuration:
+4. Test the configuration:
+   ```
+   sudo nixos-rebuild test --flake ./alcatraz-os/src#alcatraz
+   ```
+5. Apply the configuration:
    ```
    sudo nixos-rebuild switch --flake ./alcatraz-os/src#alcatraz
    ```
@@ -74,6 +83,7 @@ src/
   hosts/
     alcatraz/             # Bare-metal host config
     alcatraz-iso/         # Installer ISO config
+      disko-config.nix    # Declarative disk layout (used by installer)
     alcatraz-wsl/         # WSL 2 host config
   modules/
     base.nix              # Shared settings (users, networking, nix)

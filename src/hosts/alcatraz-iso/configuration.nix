@@ -11,9 +11,11 @@
 #   sudo dd bs=4M conv=fsync oflag=direct status=progress \
 #     if=result/iso/nixos-*.iso of=/dev/sdX
 
-{ config, pkgs, lib, self, ... }:
+{ pkgs, inputs, self, ... }:
 
 let
+  diskoCli = inputs.disko.packages.${pkgs.system}.disko;
+
   alcatraz-install = pkgs.writeShellScriptBin "alcatraz-install" ''
     set -euo pipefail
 
@@ -45,13 +47,6 @@ let
       exit 1
     fi
 
-    # NVMe and eMMC disks use a 'p' separator before partition numbers
-    if [[ "$DISK" == *"nvme"* ]] || [[ "$DISK" == *"mmcblk"* ]]; then
-      PART="''${DISK}p"
-    else
-      PART="$DISK"
-    fi
-
     echo "=== Alcatraz OS Installer ==="
     echo ""
     echo "Target disk: $DISK"
@@ -65,40 +60,19 @@ let
     fi
 
     echo ""
-    echo "[1/6] Partitioning $DISK (GPT, UEFI)..."
-    parted "$DISK" -- mklabel gpt
-    parted "$DISK" -- mkpart ESP fat32 1MB 512MB
-    parted "$DISK" -- set 1 esp on
-    parted "$DISK" -- mkpart root ext4 512MB -8GB
-    parted "$DISK" -- mkpart swap linux-swap -8GB 100%
+    echo "[1/4] Partitioning, formatting, and mounting $DISK..."
+    disko --mode destroy,format,mount --disk main "$DISK" /etc/alcatraz/src/hosts/alcatraz-iso/disko-config.nix
 
-    echo "[2/6] Formatting..."
-    mkfs.fat -F 32 -n boot "''${PART}1"
-    mkfs.ext4 -L nixos "''${PART}2"
-    mkswap -L swap "''${PART}3"
-
-    echo "[3/6] Mounting..."
-    mount /dev/disk/by-label/nixos /mnt
-    mkdir -p /mnt/boot
-    mount /dev/disk/by-label/boot /mnt/boot
-    swapon /dev/disk/by-label/swap
-
-    echo "[4/6] Copying configuration..."
+    echo "[2/4] Copying configuration..."
     mkdir -p /mnt/etc/nixos
     cp -r /etc/alcatraz/* /mnt/etc/nixos/
 
-    echo "[5/6] Detecting hardware..."
+    echo "[3/4] Detecting hardware..."
     nixos-generate-config --root /mnt --dir /tmp/hw-config
     cp /tmp/hw-config/hardware-configuration.nix \
       /mnt/etc/nixos/src/hosts/alcatraz/hardware-configuration.nix
 
-    # Replace GRUB (legacy) bootloader with systemd-boot (UEFI)
-    CONF="/mnt/etc/nixos/src/hosts/alcatraz/configuration.nix"
-    sed -i 's|boot.loader.grub.enable = true;|boot.loader.systemd-boot.enable = true;|' "$CONF"
-    sed -i 's|boot.loader.grub.device = .*|boot.loader.efi.canTouchEfiVariables = true;|' "$CONF"
-    sed -i '/boot.loader.grub.useOSProber/d' "$CONF"
-
-    echo "[6/6] Installing Alcatraz OS (this will take a while)..."
+    echo "[4/4] Installing Alcatraz OS (this will take a while)..."
     nixos-install --flake /mnt/etc/nixos/src#alcatraz
 
     echo ""
@@ -110,6 +84,7 @@ in
 {
   environment.systemPackages = with pkgs; [
     alcatraz-install
+    diskoCli
     vim
     git
     parted

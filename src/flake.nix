@@ -9,11 +9,14 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    disko.url = "github:nix-community/disko/latest";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
+
     nixos-wsl.url = "github:nix-community/NixOS-WSL";
     nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, home-manager, nixos-wsl, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, disko, nixos-wsl, ... }@inputs:
   let
     system = "x86_64-linux";
 
