@@ -17,7 +17,7 @@ Requires a UEFI-capable x86_64 machine and internet access during install.
 2. Write it to a USB drive:
    ```
    sudo dd bs=4M conv=fsync oflag=direct status=progress \
-     if=result/iso/nixos-*.iso of=/dev/sdX
+     if=result/iso/nixos-minimal-26.05.20260313.c06b4ae-x86_64-linux.iso of=/dev/sdX
    ```
 3. Boot from the USB and run:
    ```
