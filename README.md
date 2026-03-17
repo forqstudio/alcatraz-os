@@ -55,8 +55,8 @@ Requires a UEFI-capable x86_64 machine and internet access during install.
    ```
    sudo nixos-generate-config --dir ./alcatraz-os/src/hosts/alcatraz/
    ```
-3. Edit `src/hosts/alcatraz/configuration.nix` to match your bootloader and
-   locale settings.
+3. Edit `src/hosts/alcatraz/bootloader.nix` to match your system (UEFI
+   systemd-boot or BIOS GRUB) and `configuration.nix` for locale settings.
 4. Test the configuration:
    ```
    sudo nixos-rebuild test --flake ./alcatraz-os/src#alcatraz
@@ -82,6 +82,7 @@ src/
   flake.nix              # Flake entry point (inputs, outputs)
   hosts/
     alcatraz/             # Bare-metal host config
+      bootloader.nix      # Bootloader settings (overwritten by installer)
     alcatraz-iso/         # Installer ISO config
       disko-config.nix    # Declarative disk layout (used by installer)
     alcatraz-wsl/         # WSL 2 host config
