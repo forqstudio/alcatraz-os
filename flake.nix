@@ -73,7 +73,7 @@
     # .wsl file (tar.gz) importable by WSL on Windows.
     #
     # Build with:
-    #   sudo nix run ./src#alcatraz-wsl-tarball
+    #   sudo nix run .#alcatraz-wsl-tarball
     #
     # Then on Windows:
     #   wsl --install --from-file nixos.wsl        (WSL >= 2.4.4)
@@ -82,7 +82,7 @@
       alcatraz-wsl-tarball =
         self.nixosConfigurations.alcatraz-wsl.config.system.build.tarballBuilder;
 
-      # Build with: nix build ./src#iso
+      # Build with: nix build .#iso
       # Result at: result/iso/nixos-*.iso
       iso =
         self.nixosConfigurations.alcatraz-iso.config.system.build.isoImage;
