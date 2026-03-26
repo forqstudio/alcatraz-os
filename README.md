@@ -1,4 +1,4 @@
-# Alcatraz OS
+# Alcatraz OS (ABANDONED)
 
 A NixOS-based operating system for AI-assisted software development. Ships with
 two user accounts: `dev` (human developer) and `al` (AI coding agent), each with
